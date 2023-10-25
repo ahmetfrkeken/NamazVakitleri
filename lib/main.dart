@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'Pusula.dart';
 import 'namaz_vakti_data.dart';
-import 'package:intl/intl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -54,13 +53,13 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Namaz Vakitleri'),
+        title: const Text('Namaz Vakitleri'),
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            UserAccountsDrawerHeader(
+            const UserAccountsDrawerHeader(
               accountName: Text("Ahmet Faruk EKEN"),
               accountEmail: Text("test@osmanli.com"),
               currentAccountPicture: CircleAvatar(
@@ -69,8 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Home'),
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushReplacement(context,
@@ -78,8 +77,8 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('Settings'),
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
               onTap: () {
                 Navigator.pop(context);
               },
@@ -92,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           children: [
             _buildClock(context),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             Expanded(child: _buildPrayerTimes(context)),
           ],
         ),
@@ -101,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildClock(BuildContext context) {
-    return Center(
+    return const Center(
       child: Text(
         '',
         style: TextStyle(
@@ -116,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return ListView.builder(
       itemCount: data.length,
       itemBuilder: (context, index) {
-        return ListTile(
+        return const ListTile(
           title: Text(''),
         );
       },
@@ -126,7 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> getVakitler() async {
     NamazVakti namazVakti = await fetchNamazVakti();
     data = namazVakti.times;
-    // convertDifferanceDateTimeToString(getDifferenceDateTime());
+    print(convertDifferanceDateTimeToString(getDifferenceDateTime()));
     setState(() {});
   }
 
@@ -135,6 +134,8 @@ class _MyHomePageState extends State<MyHomePage> {
       "country": "Turkey",
       "region": "Ankara",
       "city": "Ankara",
+      "day": "1",
+      "timezoneOffset": "180"
     };
     var url =
         Uri.https('namaz-vakti.vercel.app', '/api/timesFromPlace', queryParam);
@@ -151,34 +152,37 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  // DateTime? getDifferenceDateTime() {
-  //   DateTime now = DateTime.now();
-  //   for (var element in data) {
-  //     final format = DateFormat("Hm");
-  //     DateTime dateTime;
-  //     try {
-  //       dateTime = format.parse(element.saat);
-  //
-  //       print(
-  //           dateTime); // Bu satır, dönüştürülen DateTime nesnesini konsola yazdırır.
-  //       Duration difference = dateTime.difference(now);
-  //       if (!difference.isNegative) {
-  //         return dateTime;
-  //       } else {
-  //         return null;
-  //       }
-  //     } catch (e) {
-  //       print("Tarih çözümleme hatası: $e");
-  //     }
-  //   }
-  //   return null;
-  // }
+  DateTime? getDifferenceDateTime() {
+    DateTime now = DateTime.now();
+    for (var element in data) {
+      for (var time in element.times) {
+        // final DateFormat format = DateFormat("HH:mm");
+        DateTime dateTime;
+        try {
+          dateTime = DateTime.parse("${element.date}T$time");
+
+          // print(dateTime); //servisten gelen zaman
+          // print(format.parse(format.format(now))); //şimdiki zaman
+
+          Duration difference = dateTime.difference(now);
+
+          // print(difference.isNegative);
+          // print(difference.inMinutes);
+
+          if (!difference.isNegative) {
+            return dateTime;
+          }
+        } catch (e) {
+          print("Tarih çözümleme hatası: $e");
+        }
+      }
+    }
+    return null;
+  }
 
   String convertDifferanceDateTimeToString(DateTime? dateTime) {
     if (dateTime != null) {
-      return dateTime.hour.toString() +
-          dateTime.minute.toString() +
-          dateTime.second.toString();
+      return "${dateTime.hour}:${dateTime.minute}:${dateTime.second}";
     }
     return "";
   }

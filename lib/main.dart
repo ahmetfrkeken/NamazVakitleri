@@ -1,23 +1,33 @@
-import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'Pusula.dart';
+import 'package:namazvakti/l10n/locale_keys.g.dart';
+import 'package:namazvakti/services/api_service.dart';
+import 'l10n/l10.dart';
+import 'pusula.dart';
 import 'namaz_vakti_data.dart';
+import 'widgets/count_down_timer.dart';
+import 'package:easy_localization/easy_localization.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
+  runApp(EasyLocalization(
+    supportedLocales: L10n.all,
+    path: 'assets/l10n',
+    fallbackLocale: L10n.all[0],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  //apikey 1X8EKPiBRDqsvlZbnns2Tp:5QauOiqsbK75MLMZ8n6o71
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -39,11 +49,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<NamazVaktiData> data = [];
-  Timer? _timer;
-  DateTime? _remainingTime;
+  final DateTime currentTime = DateTime.now();
+  DateTime? eventTime;
 
-  @override
+  List<NamazVaktiData> data = [];
+
   void initState() {
     getVakitler();
     super.initState();
@@ -51,6 +61,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+    var vakitIsimleri = [
+      LocaleKeys.imsak.tr(),
+      LocaleKeys.sabah.tr(),
+      LocaleKeys.ogle.tr(),
+      LocaleKeys.ikindi.tr(),
+      LocaleKeys.aksam.tr(),
+      LocaleKeys.yatsi.tr()
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Namaz Vakitleri'),
@@ -90,66 +110,63 @@ class _MyHomePageState extends State<MyHomePage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildClock(context),
+            CountdownTimer(
+                currentTime: currentTime, eventTime: eventTime ?? DateTime(0)),
             const SizedBox(height: 40),
-            Expanded(child: _buildPrayerTimes(context)),
+            Text(
+                style: const TextStyle(fontSize: 20),
+                DateFormat(
+                        'd MMMM yyyy',
+                        't'
+                            'r_TR')
+                    .format(DateTime.now())),
+            const SizedBox(height: 40),
+            Expanded(
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                shrinkWrap: true,
+                itemCount: data.isNotEmpty ? data.first.times.length : 1,
+                itemBuilder: (context, index) {
+                  if (data.isEmpty) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  } else {
+                    return Container(
+                      width: ((size.width - 32.0) / 6),
+                      child: Column(
+                        children: [
+                          Text(
+                              style: const TextStyle(fontSize: 8),
+                              vakitIsimleri[index]),
+                          Text(data.first.times[index]),
+                        ],
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildClock(BuildContext context) {
-    return const Center(
-      child: Text(
-        '',
-        style: TextStyle(
-          fontSize: 48,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrayerTimes(BuildContext context) {
-    return ListView.builder(
-      itemCount: data.length,
-      itemBuilder: (context, index) {
-        return const ListTile(
-          title: Text(''),
-        );
-      },
-    );
-  }
-
   Future<void> getVakitler() async {
-    NamazVakti namazVakti = await fetchNamazVakti();
-    data = namazVakti.times;
-    print(convertDifferanceDateTimeToString(getDifferenceDateTime()));
-    setState(() {});
-  }
-
-  Future<NamazVakti> fetchNamazVakti() async {
     final queryParam = {
       "country": "Turkey",
       "region": "Ankara",
       "city": "Ankara",
-      "day": "1",
+      "days": "1",
       "timezoneOffset": "180"
     };
-    var url =
-        Uri.https('namaz-vakti.vercel.app', '/api/timesFromPlace', queryParam);
-    // var header = {
-    //   "Authorization": "apikey 1X8EKPiBRDqsvlZbnns2Tp:5QauOiqsbK75MLMZ8n6o71",
-    //   "content-type": "application/json"
-    // };
-    final response = await http.get(url);
 
-    if (response.statusCode == 200) {
-      return NamazVakti.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('failed to load Namaz Vakitleri');
-    }
+    NamazVakti namazVakti = await ApiService().fetchNamazVakti(queryParam);
+    data = namazVakti.times;
+    setState(() {
+      eventTime = getDifferenceDateTime();
+    });
   }
 
   DateTime? getDifferenceDateTime() {
@@ -162,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
           dateTime = DateTime.parse("${element.date}T$time");
 
           // print(dateTime); //servisten gelen zaman
-          // print(format.parse(format.format(now))); //şimdiki zaman
+          // print(now); //şimdiki zaman
 
           Duration difference = dateTime.difference(now);
 
@@ -185,23 +202,5 @@ class _MyHomePageState extends State<MyHomePage> {
       return "${dateTime.hour}:${dateTime.minute}:${dateTime.second}";
     }
     return "";
-  }
-
-  void startTimer() {
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (_remainingTime!.isAfter(DateTime.now())) {
-        timer.cancel();
-      } else {
-        setState(() {
-          _remainingTime = _remainingTime!.subtract(Duration(seconds: 1));
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 }

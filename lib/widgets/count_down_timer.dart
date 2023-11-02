@@ -41,9 +41,9 @@ class _CountdownTimerState extends State<CountdownTimer> {
     // print(widget.eventTime);
     // print(widget.currentTime);
     remainingTime = widget.eventTime.difference(DateTime.now());
-    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
-        remainingTime = remainingTime - Duration(seconds: 1);
+        remainingTime = remainingTime - const Duration(seconds: 1);
         if (remainingTime.inSeconds <= 0) {
           timer.cancel();
         }

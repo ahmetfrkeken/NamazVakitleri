@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:namazvakti/app/namaz_vakti_app.dart';
 import 'package:namazvakti/l10n/locale_keys.g.dart';
 import 'package:namazvakti/services/api_service.dart';
 import 'package:namazvakti/services/shared_preferences_service.dart';
@@ -25,31 +26,12 @@ void main() async {
           supportedLocales: L10n.all,
           path: 'assets/l10n',
           fallbackLocale: L10n.all[0],
-          child: const MyApp(),
+          child: const NamazVaktiApp(),
         ),
       )
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      debugShowCheckedModeBanner: false,
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});

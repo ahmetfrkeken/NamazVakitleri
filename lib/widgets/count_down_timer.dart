@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:namazvakti/widgets/widgets.dart';
 
 class CountdownTimer extends StatefulWidget {
-  final DateTime currentTime;
-  final DateTime eventTime;
+  final DateTime? eventTime;
 
-  CountdownTimer({required this.currentTime, required this.eventTime});
+  CountdownTimer({required this.eventTime});
 
   @override
   _CountdownTimerState createState() => _CountdownTimerState();
@@ -23,11 +23,17 @@ class _CountdownTimerState extends State<CountdownTimer> {
 
   @override
   Widget build(BuildContext context) {
-    initTimer();
-    return Text(
-      formatDuration(remainingTime),
-      style: TextStyle(fontSize: 48),
-    );
+    if (widget.eventTime != null) {
+      initTimer();
+      return DisplayText(
+        text: formatDuration(remainingTime),
+        fontSize: 40,
+      );
+    } else {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
   }
 
   String formatDuration(Duration duration) {
@@ -40,7 +46,8 @@ class _CountdownTimerState extends State<CountdownTimer> {
   void initTimer() {
     // print(widget.eventTime);
     // print(widget.currentTime);
-    remainingTime = widget.eventTime.difference(DateTime.now());
+    remainingTime = widget.eventTime!.difference(DateTime.now());
+
     timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         remainingTime = remainingTime - const Duration(seconds: 1);

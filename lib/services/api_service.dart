@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../namaz_vakti_data.dart';
+import '../data/models/namaz_vakti_model.dart';
 
 class ApiService {
   final String _baseUrl = 'namaz-vakti.vercel.app';

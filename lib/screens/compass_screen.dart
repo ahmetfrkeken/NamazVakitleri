@@ -1,17 +1,19 @@
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class Pusula extends StatefulWidget {
-  const Pusula({super.key});
+class CompassScreen extends StatefulWidget {
+  static CompassScreen builder(BuildContext context, GoRouterState state) =>
+      const CompassScreen();
+  const CompassScreen({super.key});
 
   @override
-  State<Pusula> createState() => _PusulaState();
+  State<CompassScreen> createState() => _CompassScreenState();
 }
 
-class _PusulaState extends State<Pusula> {
+class _CompassScreenState extends State<CompassScreen> {
   bool _hasPermissions = false;
   CompassEvent? _lastRead;
   DateTime? _lastReadAt;

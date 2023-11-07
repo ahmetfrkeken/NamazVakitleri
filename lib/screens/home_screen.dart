@@ -1,18 +1,18 @@
-import 'dart:convert';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hijri/hijri_calendar.dart';
-import 'package:namazvakti/l10n/locale_keys.g.dart';
 import 'package:namazvakti/data/models/namaz_vakti_model.dart';
+import 'package:namazvakti/services/shared_preferences_service.dart';
+import 'package:namazvakti/widgets/display_prayer_times_list.dart';
 import 'package:namazvakti/widgets/widgets.dart';
 
 import '../services/api_service.dart';
-import '../services/shared_preferences_service.dart';
 
 class HomeScreen extends StatefulWidget {
+  static HomeScreen builder(BuildContext context, GoRouterState state) =>
+      const HomeScreen(title: 'Namaz Vakitleri');
   const HomeScreen({super.key, required this.title});
-
   final String title;
 
   @override
@@ -21,27 +21,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final DateTime currentTime = DateTime.now();
-  DateTime? eventTime;
-  List<NamazVaktiData> data = [];
+  List<NamazVaktiData>? data;
+  Map<String, int>? indices;
 
   @override
   void initState() {
-    checkData();
     super.initState();
+    checkData().then((value) => setState(() {}));
   }
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
-    var vakitIsimleri = [
-      LocaleKeys.imsak.tr(),
-      LocaleKeys.sabah.tr(),
-      LocaleKeys.ogle.tr(),
-      LocaleKeys.ikindi.tr(),
-      LocaleKeys.aksam.tr(),
-      LocaleKeys.yatsi.tr()
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Namaz Vakitleri'),
@@ -57,126 +47,89 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Column(
             children: [
-              CountdownTimer(eventTime: eventTime),
+              CountdownTimer(
+                data: data,
+                indices: indices,
+              ),
               const SizedBox(height: 40),
               DisplayText(
                 text: DateFormat('d MMMM yyyy', 'tr_TR').format(DateTime.now()),
                 fontSize: 20,
               ),
               DisplayText(
-                text: HijriCalendar.now().toFormat("MMMM dd yyyy"),
+                text: HijriCalendar.now().toFormat('MMMM dd yyyy'),
                 fontSize: 20,
               ),
               const SizedBox(height: 40),
-              Container(
-                height: 50,
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.black, width: 2),
-                    color: Colors.red),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: data.isNotEmpty ? data.first.times.length : 1,
-                  itemBuilder: (context, index) {
-                    if (data.isEmpty) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    } else {
-                      return Container(
-                        width: ((size.width - 32.0) / 6),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                                style: const TextStyle(fontSize: 8),
-                                vakitIsimleri[index]),
-                            Text(data.first.times[index]),
-                          ],
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ),
+              DisplayPrayerTimesList(
+                data: data,
+                indices: indices,
+              )
             ],
           ),
         ),
       ),
     );
   }
-  
 
-  Future<void> _getVakitlerFromApi() async {
-    final queryParam = {"country": "Turkey", "region": "Ankara", "city": "Ankara", "days": "7", "timezoneOffset": "180"};
-
-    NamazVakti namazVakti = await ApiService().fetchNamazVakti(queryParam);
-    print(jsonEncode(namazVakti));
-    print(jsonEncode(namazVakti).toString());
-    _saveNamazVakitleri(namazVakti);
-    data = namazVakti.times;
-    setState(() {
-      eventTime = getDifferenceDateTime();
-    });
-  }
-
-  _saveNamazVakitleri(NamazVakti namazVakti) async {
-    final SharedPreferencesService prefsService = SharedPreferencesService();
-    prefsService.saveString('NamazVakti', jsonEncode(namazVakti.toJson()).toString());
-  }
-
-  Future<NamazVakti?> _getNamazVakitleri() async {
-    final SharedPreferencesService prefsService = SharedPreferencesService();
-    final jsonString = await prefsService.getString('NamazVakti');
-    if (jsonString == null) {
-      return null;
-    }
-
-    try {
-      final jsonMap = jsonDecode(jsonString);
-      return NamazVakti.fromJson(jsonMap);
-    } catch (e) {
-      print('Hata: $e');
-      return null;
-    }
-  }
-
-  void checkData() async {
-    final namazVakitleri = await _getNamazVakitleri();
+  Future<void> checkData() async {
+    final namazVakitleri = await SharedPreferencesService().getNamazVakitleri();
 
     if (namazVakitleri != null) {
       data = (namazVakitleri).times;
     } else {
-      _getVakitlerFromApi();
+      await _getVakitlerFromApi();
     }
   }
 
-  DateTime? getDifferenceDateTime() {
-    DateTime now = DateTime.now();
-    for (var element in data) {
-      for (var time in element.times) {
-        // final DateFormat format = DateFormat("HH:mm");
-        DateTime dateTime;
-        try {
-          dateTime = DateTime.parse("${element.date}T$time");
+  Future<void> _getVakitlerFromApi() async {
+    final queryParam = {
+      'country': 'Turkey',
+      'region': 'Ankara',
+      'city': 'Ankara',
+      'days': '7',
+      'timezoneOffset': '180'
+    };
 
-          // print(dateTime); //servisten gelen zaman
-          // print(now); //şimdiki zaman
+    NamazVakti namazVakti = await ApiService().fetchNamazVakti(queryParam);
+    // print(jsonEncode(namazVakti));
+    // print(jsonEncode(namazVakti).toString());
+    SharedPreferencesService().saveNamazVakitleri(namazVakti);
+    data = namazVakti.times;
+    indices = getNextPrayerTime();
+  }
 
-          Duration difference = dateTime.difference(now);
+  Map<String, int>? getNextPrayerTime() {
+    if (data != null) {
+      Map<String, int> result = <String, int>{};
+      DateTime now = DateTime.now();
+      for (int indexElement = 0; indexElement < data!.length; indexElement++) {
+        var element = data![indexElement];
+        for (int indexTime = 0; indexTime < element.times.length; indexTime++) {
+          var time = element.times[indexTime];
+          try {
+            // debugPrint(dateTime); //servisten gelen zaman
+            // debugPrint(now); //şimdiki zaman
 
-          // print(difference.isNegative);
-          // print(difference.inMinutes);
+            DateTime dateTime = DateTime.parse('${element.date}T$time');
+            Duration difference = dateTime.difference(now);
 
-          if (!difference.isNegative) {
-            return dateTime;
+            // debugPrint(difference.isNegative);
+            // debugPrint(difference.inMinutes);
+
+            if (!difference.isNegative) {
+              result['indexElement'] = indexElement;
+              result['indexTime'] = indexTime;
+              return result; // List olarak döndürüyoruz
+            }
+          } catch (e) {
+            debugPrint('Tarih çözümleme hatası: $e');
           }
-        } catch (e) {
-          print("Tarih çözümleme hatası: $e");
         }
       }
+      return null;
+    } else {
+      return null;
     }
-    return null;
   }
 }

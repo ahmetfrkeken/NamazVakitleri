@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
-import '../pusula.dart';
+import 'package:go_router/go_router.dart';
+import 'package:namazvakti/config/routes/routes.dart';
+import 'package:namazvakti/screens/compass_screen.dart';
 
 class NamazVaktiDrawer extends StatelessWidget {
   const NamazVaktiDrawer({super.key});
@@ -23,9 +24,11 @@ class NamazVaktiDrawer extends StatelessWidget {
             leading: const Icon(Icons.home),
             title: const Text('Home'),
             onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const Pusula()));
+              // Navigator.pop(context);
+              // Navigator.pushReplacement(context,
+              //     MaterialPageRoute(builder: (context) => const CompassScreen()));
+
+              context.push(RouteLocation.compass);
             },
           ),
           ListTile(

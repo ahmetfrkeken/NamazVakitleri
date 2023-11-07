@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:namazvakti/data/models/namaz_vakti_model.dart';
 import 'package:namazvakti/widgets/widgets.dart';
 
 class CountdownTimer extends StatefulWidget {
-  final DateTime? eventTime;
+  final List<NamazVaktiData>? data;
+  final Map<String, int>? indices;
 
-  CountdownTimer({required this.eventTime});
+  const CountdownTimer({super.key, required this.data, required this.indices});
 
   @override
-  _CountdownTimerState createState() => _CountdownTimerState();
+  State<CountdownTimer> createState() => _CountdownTimerState();
 }
 
 class _CountdownTimerState extends State<CountdownTimer> {
@@ -23,12 +25,20 @@ class _CountdownTimerState extends State<CountdownTimer> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.eventTime != null) {
+    if (widget.data != null && widget.indices != null) {
       initTimer();
-      return DisplayText(
-        text: formatDuration(remainingTime),
-        fontSize: 40,
-      );
+      return Column(children: [
+        const DisplayText(
+          text: 'Vaktin Çıkmasına Kalan Süre:', //Sonraki vakit nedir?
+          fontWeight: FontWeight.normal,
+          fontSize: 18,
+        ),
+        DisplayText(
+          //Sonraki vakta kalan süre
+          text: formatDuration(remainingTime),
+          fontSize: 40,
+        ),
+      ]);
     } else {
       return const Center(
         child: CircularProgressIndicator(),
@@ -40,19 +50,24 @@ class _CountdownTimerState extends State<CountdownTimer> {
     int hours = duration.inHours;
     int minutes = duration.inMinutes.remainder(60);
     int seconds = duration.inSeconds.remainder(60);
-    return "${hours}h ${minutes}m ${seconds}s";
+    return "$hours $minutes $seconds";
   }
 
   void initTimer() {
-    // print(widget.eventTime);
-    // print(widget.currentTime);
-    remainingTime = widget.eventTime!.difference(DateTime.now());
+    // debugPrint(widget.eventTime);
+    // debugPrint(widget.currentTime);
+    //data[widget.indices["indexElement"]]
 
-    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    var element = widget.data![widget.indices!["indexElement"]!];
+    var time = element.times[widget.indices!['indexTime']!];
+    DateTime dateTime = DateTime.parse("${element.date}T$time");
+
+    remainingTime = dateTime.difference(DateTime.now());
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
       setState(() {
         remainingTime = remainingTime - const Duration(seconds: 1);
-        if (remainingTime.inSeconds <= 0) {
-          timer.cancel();
+        if (remainingTime.isNegative) {
+          t.cancel();
         }
       });
     });

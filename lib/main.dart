@@ -12,14 +12,12 @@ void main() async {
   SharedPreferencesService prefsService = SharedPreferencesService();
   await prefsService.init();
 
-  runApp(
-      ProviderScope(
-        child: EasyLocalization(
-          supportedLocales: L10n.all,
-          path: 'assets/l10n',
-          fallbackLocale: L10n.all[0],
-          child: const NamazVaktiApp(),
-        ),
-      )
-  );
+  runApp(ProviderScope(
+    child: EasyLocalization(
+      supportedLocales: L10n.all,
+      path: 'assets/l10n',
+      fallbackLocale: L10n.all[0],
+      child: const NamazVaktiApp(),
+    ),
+  ));
 }

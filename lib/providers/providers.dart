@@ -1,0 +1,1 @@
+export 'namaz_vakti_provider.dart';

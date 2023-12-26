@@ -22,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final DateTime currentTime = DateTime.now();
   List<NamazVaktiData>? data;
-  Map<String, int>? indices;
+  int? indexOfNextPrayerTime;
 
   @override
   void initState() {
@@ -48,8 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               CountdownTimer(
-                data: data,
-                indices: indices,
+                data: nextPrayerTimeData,
               ),
               const SizedBox(height: 40),
               DisplayText(
@@ -96,17 +95,17 @@ class _HomeScreenState extends State<HomeScreen> {
     // print(jsonEncode(namazVakti).toString());
     SharedPreferencesService().saveNamazVakitleri(namazVakti);
     data = namazVakti.times;
-    indices = getNextPrayerTime();
+    indexOfNextPrayerTime = getNextPrayerTime();
   }
 
-  Map<String, int>? getNextPrayerTime() {
+  int? getNextPrayerTime() {
     if (data != null) {
-      Map<String, int> result = <String, int>{};
       DateTime now = DateTime.now();
-      for (int indexElement = 0; indexElement < data!.length; indexElement++) {
-        var element = data![indexElement];
-        for (int indexTime = 0; indexTime < element.times.length; indexTime++) {
-          var time = element.times[indexTime];
+      for (var element in data!) {
+        for (int indexOfNextPrayerTime = 0;
+            indexOfNextPrayerTime < element.times.length;
+            indexOfNextPrayerTime++) {
+          var time = element.times[indexOfNextPrayerTime];
           try {
             // debugPrint(dateTime); //servisten gelen zaman
             // debugPrint(now); //şimdiki zaman
@@ -118,9 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // debugPrint(difference.inMinutes);
 
             if (!difference.isNegative) {
-              result['indexElement'] = indexElement;
-              result['indexTime'] = indexTime;
-              return result; // List olarak döndürüyoruz
+              return indexOfNextPrayerTime; // List olarak döndürüyoruz
             }
           } catch (e) {
             debugPrint('Tarih çözümleme hatası: $e');

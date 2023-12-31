@@ -47,9 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Column(
             children: [
-              CountdownTimer(
-                data: nextPrayerTimeData,
-              ),
+              const CountdownTimer(),
               const SizedBox(height: 40),
               DisplayText(
                 text: DateFormat('d MMMM yyyy', 'tr_TR').format(DateTime.now()),
@@ -59,11 +57,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 text: HijriCalendar.now().toFormat('MMMM dd yyyy'),
                 fontSize: 20,
               ),
-              const SizedBox(height: 40),
-              DisplayPrayerTimesList(
-                data: data,
-                indices: indices,
-              )
+              const SizedBox(height: 40)
+              //DisplayPrayerTimesList(
+              //  data: data,
+              //  indices: indices,
+              //)
             ],
           ),
         ),
@@ -95,38 +93,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // print(jsonEncode(namazVakti).toString());
     SharedPreferencesService().saveNamazVakitleri(namazVakti);
     data = namazVakti.times;
-    indexOfNextPrayerTime = getNextPrayerTime();
-  }
-
-  int? getNextPrayerTime() {
-    if (data != null) {
-      DateTime now = DateTime.now();
-      for (var element in data!) {
-        for (int indexOfNextPrayerTime = 0;
-            indexOfNextPrayerTime < element.times.length;
-            indexOfNextPrayerTime++) {
-          var time = element.times[indexOfNextPrayerTime];
-          try {
-            // debugPrint(dateTime); //servisten gelen zaman
-            // debugPrint(now); //şimdiki zaman
-
-            DateTime dateTime = DateTime.parse('${element.date}T$time');
-            Duration difference = dateTime.difference(now);
-
-            // debugPrint(difference.isNegative);
-            // debugPrint(difference.inMinutes);
-
-            if (!difference.isNegative) {
-              return indexOfNextPrayerTime; // List olarak döndürüyoruz
-            }
-          } catch (e) {
-            debugPrint('Tarih çözümleme hatası: $e');
-          }
-        }
-      }
-      return null;
-    } else {
-      return null;
-    }
+    //indexOfNextPrayerTime = getNextPrayerTime();
   }
 }

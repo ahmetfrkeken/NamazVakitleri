@@ -1,39 +1,28 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:namazvakti/data/models/namaz_vakti_model.dart';
+import 'package:namazvakti/providers/namaz_vakti_provider.dart';
 import 'package:namazvakti/widgets/widgets.dart';
 
-class CountdownTimer extends StatefulWidget {
-  final time;
-
-  const CountdownTimer({super.key, required this.data});
+class CountdownTimer extends ConsumerWidget {
+  const CountdownTimer({super.key});
 
   @override
-  State<CountdownTimer> createState() => _CountdownTimerState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final namazVaktiData = ref.watch(namazVaktiDataProvider);
+    initTimer(namazVaktiData);
 
-class _CountdownTimerState extends State<CountdownTimer> {
-  late Duration remainingTime;
-  late Timer timer;
-
-  @override
-  void dispose() {
-    timer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    initTimer();
-    return Column(children: [
-      const DisplayText(
+    return const Column(children: [
+      DisplayText(
         text: 'Vaktin Çıkmasına Kalan Süre:', //Sonraki vakit nedir?
         fontWeight: FontWeight.normal,
         fontSize: 18,
       ),
       DisplayText(
         //Sonraki vakta kalan süre
-        text: formatDuration(remainingTime),
+        //text: formatDuration(remainingTime),
+        text: "Ahmet Baba",
         fontSize: 40,
       ),
     ]);
@@ -46,7 +35,9 @@ class _CountdownTimerState extends State<CountdownTimer> {
     return "$hours $minutes $seconds";
   }
 
-  void initTimer() {
+  void initTimer(NamazVakti? namazVaktiData) {
+    final nextPrayerIndex = getNextPrayerTime(namazVaktiData);
+
     // debugPrint(widget.eventTime);
     // debugPrint(widget.currentTime);
     //data[widget.indices["indexElement"]]
@@ -62,5 +53,37 @@ class _CountdownTimerState extends State<CountdownTimer> {
     //     }
     //   });
     // });
+  }
+
+  int? getNextPrayerTime(NamazVakti? namazVaktiData) {
+    if (namazVaktiData != null && namazVaktiData.times.isNotEmpty) {
+      DateTime now = DateTime.now();
+      for (var element in namazVaktiData.times) {
+        for (int indexOfNextPrayerTime = 0;
+            indexOfNextPrayerTime < element.times.length;
+            indexOfNextPrayerTime++) {
+          var time = element.times[indexOfNextPrayerTime];
+          try {
+            // debugPrint(dateTime); //servisten gelen zaman
+            // debugPrint(now); //şimdiki zaman
+
+            DateTime dateTime = DateTime.parse('${element.date}T$time');
+            Duration difference = dateTime.difference(now);
+
+            // debugPrint(difference.isNegative);
+            // debugPrint(difference.inMinutes);
+
+            if (!difference.isNegative) {
+              return indexOfNextPrayerTime; // List olarak döndürüyoruz
+            }
+          } catch (e) {
+            debugPrint('Tarih çözümleme hatası: $e');
+          }
+        }
+      }
+      return null;
+    } else {
+      return null;
+    }
   }
 }

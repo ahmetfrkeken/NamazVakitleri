@@ -10,22 +10,27 @@ class CountdownTimer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final namazVaktiData = ref.watch(namazVaktiDataProvider);
-    initTimer(namazVaktiData);
+    final namazVaktiData = ref.watch(namazVaktiProvider);
 
-    return const Column(children: [
-      DisplayText(
-        text: 'Vaktin Çıkmasına Kalan Süre:', //Sonraki vakit nedir?
-        fontWeight: FontWeight.normal,
-        fontSize: 18,
-      ),
-      DisplayText(
-        //Sonraki vakta kalan süre
-        //text: formatDuration(remainingTime),
-        text: "Ahmet Baba",
-        fontSize: 40,
-      ),
-    ]);
+    return namazVaktiData.when(
+        loading: () => const CircularProgressIndicator(),
+        error: (error, stackTrace) => Text('Hata: $error'),
+        data: (data) {
+          initTimer(data);
+          return const Column(children: [
+            DisplayText(
+              text: 'Vaktin Çıkmasına Kalan Süre:', //Sonraki vakit nedir?
+              fontWeight: FontWeight.normal,
+              fontSize: 18,
+            ),
+            DisplayText(
+              //Sonraki vakta kalan süre
+              //text: formatDuration(remainingTime),
+              text: "Ahmet Baba",
+              fontSize: 40,
+            ),
+          ]);
+        });
   }
 
   String formatDuration(Duration duration) {
@@ -38,21 +43,17 @@ class CountdownTimer extends ConsumerWidget {
   void initTimer(NamazVakti? namazVaktiData) {
     final nextPrayerIndex = getNextPrayerTime(namazVaktiData);
 
-    // debugPrint(widget.eventTime);
-    // debugPrint(widget.currentTime);
-    //data[widget.indices["indexElement"]]
+    DateTime dateTime = DateTime.parse("${namazVaktiData.times!.isNotEmpty ? namazVaktiData.times![nextPrayerIndex] : ""}T$time");
 
-    // DateTime dateTime = DateTime.parse("${widget.data.date}T$time");
-
-    // remainingTime = dateTime.difference(DateTime.now());
-    // timer = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
-    //   setState(() {
-    //     remainingTime = remainingTime - const Duration(seconds: 1);
-    //     if (remainingTime.isNegative) {
-    //       t.cancel();
-    //     }
-    //   });
-    // });
+    remainingTime = dateTime.difference(DateTime.now());
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
+      setState(() {
+        remainingTime = remainingTime - const Duration(seconds: 1);
+        if (remainingTime.isNegative) {
+          t.cancel();
+        }
+      });
+    });
   }
 
   int? getNextPrayerTime(NamazVakti? namazVaktiData) {

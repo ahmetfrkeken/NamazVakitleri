@@ -12,9 +12,11 @@ final appRoutes = [
     parentNavigatorKey: navigationKey,
     builder: HomeScreen.builder,
   ),
+  /*
   GoRoute(
     path: RouteLocation.compass,
     parentNavigatorKey: navigationKey,
     builder: CompassScreen.builder,
   ),
+  */
 ];

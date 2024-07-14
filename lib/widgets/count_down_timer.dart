@@ -5,28 +5,47 @@ import 'package:namazvakti/data/models/namaz_vakti_model.dart';
 import 'package:namazvakti/providers/namaz_vakti_provider.dart';
 import 'package:namazvakti/widgets/widgets.dart';
 
-class CountdownTimer extends ConsumerWidget {
-  const CountdownTimer({super.key});
+class CountdownTimer extends ConsumerStatefulWidget {
+  const CountdownTimer({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConsumerStatefulWidget> createState() => _CountDownTimerState();
+}
+
+class _CountDownTimerState extends ConsumerState<CountdownTimer> {
+  Timer? _timer;
+  NamazVakti? namazVakti;
+  bool _timerInitialized = false;
+
+  @override
+  Widget build(BuildContext context) {
     final namazVaktiData = ref.watch(namazVaktiProvider);
+    final timeUntilNextPrayerTime = ref.watch(timeUntilNextPrayerTimeProvider);
+
+    if (!_timerInitialized) {
+      namazVaktiData.whenData((data) {
+        namazVakti = data;
+        if (!_timerInitialized && data != null) {
+          initTimer();
+          _timerInitialized = true; // Timer başlatıldı olarak işaretle
+        }
+      });
+    }
 
     return namazVaktiData.when(
         loading: () => const CircularProgressIndicator(),
         error: (error, stackTrace) => Text('Hata: $error'),
         data: (data) {
-          initTimer(data);
-          return const Column(children: [
-            DisplayText(
+          return Column(children: [
+            const DisplayText(
               text: 'Vaktin Çıkmasına Kalan Süre:', //Sonraki vakit nedir?
               fontWeight: FontWeight.normal,
               fontSize: 18,
             ),
             DisplayText(
               //Sonraki vakta kalan süre
-              //text: formatDuration(remainingTime),
-              text: "Ahmet Baba",
+              text: formatDuration(timeUntilNextPrayerTime),
+              //text: "Ahmet Baba",
               fontSize: 40,
             ),
           ]);
@@ -40,23 +59,22 @@ class CountdownTimer extends ConsumerWidget {
     return "$hours $minutes $seconds";
   }
 
-  void initTimer(NamazVakti? namazVaktiData) {
-    final nextPrayerIndex = getNextPrayerTime(namazVaktiData);
+  void initTimer() {
+    final nextPrayerTime = getNextPrayerTime(namazVakti);
+    ref.read(timeUntilNextPrayerTimeProvider.notifier).state =
+        (nextPrayerTime ?? DateTime.now()).difference(DateTime.now());
 
-    DateTime dateTime = DateTime.parse("${namazVaktiData.times!.isNotEmpty ? namazVaktiData.times![nextPrayerIndex] : ""}T$time");
-
-    remainingTime = dateTime.difference(DateTime.now());
-    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
-      setState(() {
-        remainingTime = remainingTime - const Duration(seconds: 1);
-        if (remainingTime.isNegative) {
-          t.cancel();
-        }
-      });
+    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
+      ref.read(timeUntilNextPrayerTimeProvider.notifier).state =
+          ref.read(timeUntilNextPrayerTimeProvider.notifier).state -
+              const Duration(seconds: 1);
+      if (ref.read(timeUntilNextPrayerTimeProvider.notifier).state.isNegative) {
+        t.cancel();
+      }
     });
   }
 
-  int? getNextPrayerTime(NamazVakti? namazVaktiData) {
+  DateTime? getNextPrayerTime(NamazVakti? namazVaktiData) {
     if (namazVaktiData != null && namazVaktiData.times.isNotEmpty) {
       DateTime now = DateTime.now();
       for (var element in namazVaktiData.times) {
@@ -75,7 +93,7 @@ class CountdownTimer extends ConsumerWidget {
             // debugPrint(difference.inMinutes);
 
             if (!difference.isNegative) {
-              return indexOfNextPrayerTime; // List olarak döndürüyoruz
+              return dateTime; // List olarak döndürüyoruz
             }
           } catch (e) {
             debugPrint('Tarih çözümleme hatası: $e');

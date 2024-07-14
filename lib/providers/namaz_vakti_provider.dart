@@ -3,6 +3,8 @@ import 'package:namazvakti/data/models/namaz_vakti_model.dart';
 import 'package:namazvakti/services/api_service.dart';
 import 'package:namazvakti/services/shared_preferences_service.dart';
 
+final timeUntilNextPrayerTimeProvider = StateProvider<Duration>((ref) => const Duration());
+
 final namazVaktiProvider = FutureProvider<NamazVakti?>((ref) async {
   final namazVakitleri = await SharedPreferencesService().getNamazVakitleri();
 
